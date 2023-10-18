@@ -7,7 +7,7 @@ from .scrape_operations import ScrapeOp, ClickOp, ReadOp, WriteOp, ScrollOp, Key
 
 class CommonActions():
 
-    OpenPage = lambda url: Action(f'open_url', url, None, None)
+    OpenPage = lambda url: Action(f'open_url_{url}', url, None, None)
     Scroll = lambda name: Action(name, None, None, ScrollOp())
     Wait = lambda name, sleeptime: Action(name, None, None, lambda: time.sleep(sleeptime))
 
