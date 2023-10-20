@@ -86,3 +86,6 @@ class Scraper():
 
     def scroll_window(self):
         self.driver.execute_script('window.scrollBy(0, window.innerHeight)')
+
+    def scroll_element(self, element):
+        self.driver.execute_script('arguments[0].scrollBy(0, arguments[0].scrollHeight)', element)

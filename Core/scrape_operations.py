@@ -168,11 +168,17 @@ class WriteOp(ScrapeOp):
     
 class ScrollOp(ScrapeOp):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, is_safe=True):
+        super().__init__(is_safe=is_safe)
 
     def execute(self):
-        self.scraper.scroll_window()
+        if self.xpath != None:
+            super().execute()
+            if self.is_safe or (self.target != None and not self.is_safe):
+                print('aaa')
+                self.scraper.scroll_element(self.target)
+        else:
+            self.scraper.scroll_window()
         return
     
 class KeyOp(ScrapeOp):

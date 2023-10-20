@@ -3,13 +3,18 @@ import types
 
 from copy import deepcopy
 
-from .scrape_operations import ScrapeOp, ClickOp, ReadOp, WriteOp, ScrollOp, KeyOp
+from selenium.webdriver.common.keys import Keys
+
+from .scrape_operations import ScrapeOp, ClickOp, ReadOp, PickOp, WriteOp, ScrollOp, KeyOp
 
 class CommonActions():
-
     OpenPage = lambda url: Action(f'open_url_{url}', url, None, None)
-    Scroll = lambda name: Action(name, None, None, ScrollOp())
+    Scroll = lambda name, xpath=None: Action(name, None, xpath, ScrollOp())
     Wait = lambda name, sleeptime: Action(name, None, None, lambda: time.sleep(sleeptime))
+    Read = lambda name, xpath, attribute=None, is_multiple=False: Action(name, xpath, ReadOp(attribute=attribute, is_multiple=is_multiple))
+    Write = lambda name, xpath, content, enter=False: Action(name, None, xpath, WriteOp(content=content, enter=enter))
+    Pick = lambda name, xpath, read_ops, is_multiple=False: Action(name, None, xpath, PickOp(read_ops, is_multiple=is_multiple))
+    Key = lambda name, xpath=None, key=Keys.ENTER: Action(name, None, xpath, KeyOp(key=key))
 
 class Action():
 
