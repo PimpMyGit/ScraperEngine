@@ -1,5 +1,7 @@
 import types
 
+from copy import deepcopy
+
 import pandas as pd
 
 from selenium.webdriver.common.keys import Keys
@@ -87,11 +89,64 @@ class ReadOp(ScrapeOp):
 
     def execute(self):      
         super().execute()
-        if self.is_multiple:
-            output = [el.get_attribute(self.attribute) if self.attribute != None else el.text for el in self.target]
+        if self.is_safe or (self.target != None and not self.is_safe):
+            if self.is_multiple:
+                output = [el.get_attribute(self.attribute) if self.attribute != None else el.text for el in self.target]
+            else:
+                output = self.target.get_attribute(self.attribute) if self.attribute != None else self.target.text
+            return output
+        return
+    
+    def execute_on_element(self, parent):
+        if self.is_safe:
+            self.target = self.scraper.safe_find_sub_elements(parent, self.xpath) if self.is_multiple else self.scraper.safe_find_sub_element(parent, self.xpath)
         else:
-            output = self.target.get_attribute(self.attribute) if self.attribute != None else self.target.text
+            try:
+                self.target = self.scraper.find_sub_elements(parent, self.xpath) if self.is_multiple else self.scraper.find_sub_element(parent, self.xpath)
+            except:
+                self.target = None      
+        #self.target = element.find_elements_by_xpath(self.xpath) if self.is_multiple else element.find_element_by_xpath(self.xpath)
+        if self.is_safe or (self.target != None and not self.is_safe):
+            if self.is_multiple:
+                output = [el.get_attribute(self.attribute) if self.attribute != None else el.text for el in self.target]
+            else:
+                output = self.target.get_attribute(self.attribute) if self.attribute != None else self.target.text
+
+            return output
+        return
+    
+class PickOp(ScrapeOp):
+
+    read_ops = []
+    read_ops_names = []
+
+    def __init__(self, read_ops, is_multiple=False):
+        super().__init__(is_multiple)
+        for rop_name, (rop, xpath) in read_ops.items():
+            rop.xpath = xpath
+            rop.is_safe = False
+            self.read_ops_names.append(rop_name)
+            self.read_ops.append(rop)
+
+    def execute(self):      
+        super().execute()
+        output = [self._eval_on_element(element) for element in self.target] if self.is_multiple else self._eval_on_element(self.target)
         return output
+    
+    def _eval_on_element(self, element):
+        output = {}
+        for rop_name,original_rop in zip(self.read_ops_names, self.read_ops):
+            rop = deepcopy(original_rop)
+            rop.scraper = self.scraper
+            rop.xpath = self._calc_relative_xpath(rop.xpath)
+            rop_out = rop.execute_on_element(element) 
+            output[rop_name] = rop_out 
+        return output
+    
+    def _calc_relative_xpath(self, child_xpath):
+        relative_xpath = f'./{child_xpath[len(self.xpath) : ]}'
+        return relative_xpath
+
     
 class WriteOp(ScrapeOp):
     
@@ -121,7 +176,6 @@ class ScrollOp(ScrapeOp):
         return
     
 class KeyOp(ScrapeOp):
-
 
     key = Keys.ENTER
     

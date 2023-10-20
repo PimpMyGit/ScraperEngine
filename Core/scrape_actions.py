@@ -140,7 +140,6 @@ class Procedure(dict):
     def add_arg(self, kwargs):
         if self.args != None:
             personal_args = deepcopy(self.args)
-            #self.args = lambda: [arg, personal_args() if isinstance(personal_args, types.FunctionType) else personal_args]
             self.args = lambda: {**kwargs, **(personal_args() if isinstance(personal_args, types.FunctionType) else personal_args)}
         else:
             self.args = kwargs
@@ -185,10 +184,16 @@ class Iterated(Procedure):
         self.actions[__key] = __value
 
     def run(self):
-        self._compute_times()
+        iter_cond_type = self._compute_times()
         self._compute_iter_args()
-        for it in range(self.times):
-            self._run_iteration(it)
+        if iter_cond_type is int:
+            for it in range(self.times):
+                self._run_iteration(it)
+        elif iter_cond_type is bool:
+            it = 0
+            while(self.times()):
+                self._run_iteration(it)
+                it += 1
         self._compute_output()
 
     def _run_iteration(self, iteration_number):
@@ -203,8 +208,12 @@ class Iterated(Procedure):
         self.actions[self.current_action.name] = self.current_action
 
     def _compute_times(self):
-        if isinstance(self.times, types.FunctionType):
-            self.times = self.times()
+        times = self.times
+        if isinstance(times, types.FunctionType):
+            times = times()
+        if type(times) is int:
+            self.times = times
+        return type(times)
 
     def _compute_iter_args(self):
         if isinstance(self.iter_args, types.FunctionType):
@@ -212,11 +221,7 @@ class Iterated(Procedure):
 
     def _set_current_iter_args(self):
         if self.iter_args != None:
-            # if self.current_action.args != None:
-            #     self.current_action.args = lambda: [self.iter_args[self.current_iteration], self.current_action._compute_args()]
-            # else:
-            #     self.current_action.args = self.iter_args[self.current_iteration]
-            self.current_action.add_arg(self.iter_args[self.current_iteration])
+           self.current_action.add_arg(self.iter_args[self.current_iteration])
 
     def _compute_output(self):
         output = []

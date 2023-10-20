@@ -9,6 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.remote.webelement import WebElement
 
 from . import action_keys as _AK
 from .scrape_actions import Action, Procedure, Iterated
@@ -60,5 +61,28 @@ class Scraper():
         WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located((By.XPATH, xpath)))
         return self.find_elements(xpath)
     
+    def find_sub_element(self, parent, child_xpath):
+        if type(parent) is str:
+            parent = self.find_element(parent)
+            child_xpath = child_xpath if child_xpath.startswith('//') else parent + child_xpath[1:]
+        out = parent.find_element_by_xpath(child_xpath)
+        return out
+    
+    def safe_find_sub_element(self, parent_xpath, child_xpath, timeout=30):
+        absolute_path = child_xpath if not child_xpath.startswith('//') else parent_xpath + child_xpath[1:]
+        WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located((By.XPATH, absolute_path)))
+        return self.find_sub_element(parent_xpath, absolute_path)
+    
+    def find_sub_elements(self, parent, child_xpath):
+        if type(parent) is str:
+            parent = self.find_elements(parent)
+            child_xpath = child_xpath if child_xpath.startswith('//') else parent + child_xpath[1:]
+        return parent.find_element_by_xpaths(child_xpath)
+    
+    def safe_find_sub_elements(self, parent_xpath, child_xpath, timeout=30):
+        absolute_path = child_xpath if not child_xpath.startswith('//') else parent_xpath + child_xpath[1:]
+        WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located((By.XPATH, absolute_path)))
+        return self.find_sub_elements(parent_xpath, absolute_path)
+
     def scroll_window(self):
         self.driver.execute_script('window.scrollBy(0, window.innerHeight)')
